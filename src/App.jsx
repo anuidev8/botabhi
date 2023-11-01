@@ -1,8 +1,20 @@
 import { Canvas } from "@react-three/fiber";
 import { Experience } from "./components/Experience";
-import { useState ,useRef, useEffect} from "react";
+import { useState ,useRef, useEffect, Suspense} from "react";
 import axios from 'axios'
 
+const Loader = () =>{
+  return (
+    <div className="loader-container">
+    <div class="loader loader-big">
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+</div>
+<h3 style={{ marginTop:4 }}>Loading...</h3>
+</div>
+  )
+}
 
 function App() {
   const [messages, setMessages] = useState([
@@ -18,7 +30,7 @@ const [loadingMessage, setLoadingMessage] = useState("Thinking...");
   setLoadingMessage("Thinking..."); // Set loading message
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/ask",
+        "http://testappapi.pythonanywhere.com/ask",
         {
           ask: userMessage
         }
@@ -76,8 +88,9 @@ const [loadingMessage, setLoadingMessage] = useState("Thinking...");
     <>
    
    
-      
+      <Suspense fallback={<Loader />} >
       <Experience />
+   
    
     
    
@@ -148,6 +161,7 @@ const [loadingMessage, setLoadingMessage] = useState("Thinking...");
             
              </button>
     </form>
+    </Suspense>
     </>
   );
 }

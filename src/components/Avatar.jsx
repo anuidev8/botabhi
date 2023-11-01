@@ -6,22 +6,19 @@ import { useFrame, useLoader } from "@react-three/fiber";
 import { useControls } from "leva";
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
-import anim from './anim.json'
+
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 export function Avatar(props) {
   const { animation } = props;
-  const gltf = useLoader(
-    GLTFLoader,
-    '/models/model-avatar.glb'
-  )
-  const { headFollow, cursorFollow, wireframe, } = useControls({
+  const { scene } = useGLTF('/models/model.glb');
+/*   const { headFollow, cursorFollow, wireframe, } = useControls({
     headFollow: false,
     cursorFollow: false,
     wireframe: false,
-  });
+  }); */
   const group = useRef();
-  const { nodes, materials,animations:Ds } = useGLTF("models/model-avatar.glb");
+  const { nodes, materials,animations:Ds } = useGLTF("models/model.glb");
   
    const { animations: typingAnimation } = useFBX("animations/Typing.fbx");
   
@@ -56,16 +53,16 @@ export function Avatar(props) {
     };
   }, [animation]);
 
-  useEffect(() => {
+  /* useEffect(() => {
     Object.values(materials).forEach((material) => {
       material.wireframe = wireframe;
     });
-  }, [wireframe]);
+  }, [wireframe]); */
  
   return (
-    <group {...props}  /* position-y={0.4}*/  ref={group}  dispose={null}>
+    <group {...props}    /* position-y={0.4}*/  ref={group}  dispose={null}>
       <group>
-        <primitive object={gltf.scene} />
+        <primitive  object={scene} />
       {/*   <skinnedMesh
         name="Wolf3D_Body"
         geometry={nodes.avaturn_body.geometry}
@@ -106,4 +103,4 @@ export function Avatar(props) {
   );
 }
 
-useGLTF.preload("models/model-avatar.glb");
+useGLTF.preload("models/model.glb");
