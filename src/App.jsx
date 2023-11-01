@@ -30,7 +30,7 @@ const [loadingMessage, setLoadingMessage] = useState("Thinking...");
   setLoadingMessage("Thinking..."); // Set loading message
     try {
       const response = await axios.post(
-        "http://testappapi.pythonanywhere.com/ask",
+        "https://testappapi.pythonanywhere.com/ask",
         {
           ask: userMessage
         }
