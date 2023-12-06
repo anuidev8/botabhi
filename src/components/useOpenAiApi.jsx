@@ -12,7 +12,7 @@ export const useOpenAiApi = () =>{
               url: 'https://api.openai.com/v1/threads',
               headers: {
                 'OpenAI-Beta': 'assistants=v1',
-                Authorization: 'Bearer ' + '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',
+                Authorization: 'Bearer ' + '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',
                 'Content-Type': 'application/json'
               },
               data: data
@@ -40,7 +40,7 @@ export const useOpenAiApi = () =>{
             url: `https://api.openai.com/v1/threads/${threadId}/messages`,
             headers: {
               'OpenAI-Beta': 'assistants=v1',
-              Authorization: `Bearer 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`,
+              Authorization: `Bearer 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`,
               'Content-Type': 'application/json'
             },
             data: data
@@ -58,7 +58,7 @@ export const useOpenAiApi = () =>{
             url: `https://api.openai.com/v1/threads/${threadId}/runs`,
             headers: {
               'OpenAI-Beta': 'assistants=v1',
-              Authorization: `Bearer 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`,
+              Authorization: `Bearer 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`,
               'Content-Type': 'application/json'
             },
             data: JSON.stringify({
@@ -75,7 +75,7 @@ export const useOpenAiApi = () =>{
               url: `https://api.openai.com/v1/threads/${threadId}/runs/${runId}`,
               headers: {
                 'OpenAI-Beta': 'assistants=v1',
-                Authorization: `Bearer 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`,
+                Authorization: `Bearer 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`,
                 'Content-Type': 'application/json'
               }
             })
@@ -102,7 +102,7 @@ export const useOpenAiApi = () =>{
             url: `https://api.openai.com/v1/threads/${threadId}/messages`,
             headers: {
               'OpenAI-Beta': 'assistants=v1',
-              Authorization: `Bearer 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`,
+              Authorization: `Bearer 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`,
               'Content-Type': 'application/json'
             }
           })
