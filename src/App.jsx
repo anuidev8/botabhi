@@ -2,7 +2,12 @@ import { Canvas } from "@react-three/fiber";
 import { Experience } from "./components/Experience";
 import { useState ,useRef, useEffect, Suspense} from "react";
 import axios from 'axios'
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { Enviroment } from "./components/Enviroment";
+import AudioPlayer from "./components/AudioPlayer";
+import { useOpenAiApi } from "./components/useOpenAiApi";
 
+const f = new FFmpeg()
 const Loader = () =>{
   return (
     <div className="loader-container">
@@ -16,6 +21,19 @@ const Loader = () =>{
   )
 }
 
+// This is a conceptual example and may not work out-of-the-box.
+// It assumes you have a library that can decode WebM and encode WAV.
+
+async function audioToBase64(audioFile) {
+  return new Promise((resolve, reject) => {
+    let reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (e) => resolve(e.target.result);
+    reader.readAsDataURL(audioFile);
+  });
+}
+
+
 function App() {
   const [messages, setMessages] = useState([
     
@@ -23,14 +41,20 @@ function App() {
   const [userMessage, setUserMessage] = useState("");
   const chatInputRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [contentType, setContentType] = useState(false)
 const [loadingMessage, setLoadingMessage] = useState("Thinking...");
+const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const [audioUrl, setAudioUrl] = useState(null);
 
-  const generateResponse = async () => {
+  const generateResponse = async (api) => {
+    setContentType('text')
      setIsLoading(true); // Set loading state to true
   setLoadingMessage("Thinking..."); // Set loading message
     try {
       const response = await axios.post(
-        "https://testappapi.pythonanywhere.com/ask",
+      `https://testappapi.pythonanywhere.com/${api}`,
         {
           ask: userMessage
         }
@@ -53,11 +77,55 @@ const [loadingMessage, setLoadingMessage] = useState("Thinking...");
     }
   };
 
-  const handleChat = (e) => {
+  const sendTextWithAudio = async () =>{
+    setIsLoading(true); // Set loading state to true
+    setLoadingMessage("Thinking..."); // Set loading message
+    try {
+      const body =  new FormData()
+      body.append('conditional','audio')
+      body.append('ask',userMessage)
+      const response = await axios.post(
+      `http://127.0.0.1:5000/asking`,body);
+  // Step 2: Create a Blob from the binary data
+const file =  response.data
+        console.log(file);
+  var numbers = file.trim().split(/\s*,\s*/g).map(x => x/1);
+  var binstr = String.fromCharCode(...numbers);
+  var b64str = btoa(binstr);
+  var src = 'data:audio/wav;base64,' + b64str;
+
+const blob = new Blob([response.data], { type: 'audio/mp3' }); // Replace 'audio/mpeg' with the correct MIME type if needed
+
+// Step 3: Create an Object URL for the Blob
+const audioUrlt = src
+        
+setAudioUrl(audioUrlt); // Save the audio URL in the state
+
+
+// Add a message indicating that an audio response is available
+setMessages([...messages, { role: "outgoing", content: userMessage }, { role: "incoming", content: "Audio response received", audio:audioUrlt}]);
+    } catch (error) {
+      console.error("Error fetching response: ", error);
+      setMessages([
+        ...messages,
+        {
+          role: "incoming",
+          content: "Oops! Something went wrong. Please try again."
+        }
+      ]);
+    }finally {
+      setIsLoading(false); // Reset loading state to false
+      setLoadingMessage(""); // Reset loading message
+    } 
+  }
+
+  const handleChat = async (e) => {
     e.preventDefault();
     if (!userMessage) return;
-    generateResponse();
-    setUserMessage("");
+    //generateResponse();
+    //sendTextWithAudio()
+    //setUserMessage("");
+   await handleMessage() 
     chatInputRef.current.style.height = "unset";
     chatInputRef.current.style.height = `${chatInputRef.current.scrollHeight}px`;
   };
@@ -67,6 +135,99 @@ const [loadingMessage, setLoadingMessage] = useState("Thinking...");
     e.target.style.height = "unset";
     e.target.style.height = `${e.target.scrollHeight}px`;
   };
+
+  const startRecording = async () => {
+    setContentType('audio')
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorderRef.current = new MediaRecorder(stream,{ mimeType: 'audio/webm' });
+    mediaRecorderRef.current.start();
+
+    mediaRecorderRef.current.ondataavailable = (event) => {
+      audioChunksRef.current.push(event.data);
+    };
+
+    setIsRecording(true);
+  };
+
+
+    const stopRecording = () => {
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+    mediaRecorderRef.current.onstop = async () => {
+     
+      const audioBlob = new Blob(audioChunksRef.current,{ type: 'audio/webm' });
+     
+      audioChunksRef.current = []
+     
+      
+      // Here you would handle the audioBlob, for example by sending it to the server
+      // or adding it to the messages state to be played back in the UI.
+      setIsLoading(true); // Set loading state to true
+      setLoadingMessage("Thinking..."); // Set loading message
+        try {
+          const body =  new FormData()
+          body.append('conditional','audio')
+          body.append('file',audioBlob)
+          const response = await axios.post(
+          `http://127.0.0.1:5000/asking`,body);
+      // Step 2: Create a Blob from the binary data
+const blob = new Blob([response.data], { type: 'audio/mp3' }); // Replace 'audio/mpeg' with the correct MIME type if needed
+
+// Step 3: Create an Object URL for the Blob
+const audioUrlt = URL.createObjectURL(blob);
+            
+  setAudioUrl(response.data); // Save the audio URL in the state
+  
+
+  // Add a message indicating that an audio response is available
+  setMessages([...messages, { role: "outgoing", content: userMessage }, { role: "incoming", content: "Audio response received", audio:audioUrlt}]);
+        } catch (error) {
+          console.error("Error fetching response: ", error);
+          setMessages([
+            ...messages,
+            {
+              role: "incoming",
+              content: "Oops! Something went wrong. Please try again."
+            }
+          ]);
+        }finally {
+          setIsLoading(false); // Reset loading state to false
+          setLoadingMessage(""); // Reset loading message
+        }   
+    };
+  };
+
+const { getThread,sendMessage ,checking,getMessage} = useOpenAiApi()
+
+const handleMessage = async (e) => {
+
+  try {
+        setContentType('text')
+     setIsLoading(true); // Set loading state to true
+  setLoadingMessage("Thinking..."); // Set loading message
+    const thread = await getThread()
+    console.log(thread);
+    await sendMessage(`${userMessage}`)
+     await checking()
+     const  aiResponse = await getMessage()
+     setMessages([...messages, { role: "outgoing", content: userMessage },{ role: "incoming", content: aiResponse }]);
+  }catch (error) {
+    console.error("Error fetching response: ", error);
+    setMessages([
+      ...messages,
+      {
+        role: "incoming",
+        content: "Oops! Something went wrong. Please try again."
+      }
+    ]);
+  }finally {
+    setIsLoading(false); // Reset loading state to false
+    setLoadingMessage(""); // Reset loading message
+  }
+ 
+  
+  
+}
 
 /*   useEffect(() => {
     const loadBackgroundTexture = async () => {
@@ -83,16 +244,16 @@ const [loadingMessage, setLoadingMessage] = useState("Thinking...");
      const scene = new THREE.Scene();
     loadBackgroundTexture();
   }, []); */
-
+  
   return (
-    <>
+    <div style={{ height:'100vh' }}>
    
-   
+     
       <Suspense fallback={<Loader />} >
-      <Experience />
+    {/*   <Experience /> */}
    
    
-    
+    <Enviroment />
    
   
     {
@@ -117,6 +278,12 @@ const [loadingMessage, setLoadingMessage] = useState("Thinking...");
            </span>
           )}
           <p>{message.content}</p>
+          {message.audio && (
+        <audio controls >
+           <source src={message.audio} type="audio/mpeg"/>
+          Your browser does not support the audio element.
+        </audio>
+      )}
         </li>
       ))}
        {isLoading && (
@@ -150,20 +317,36 @@ const [loadingMessage, setLoadingMessage] = useState("Thinking...");
              </button>
              <button
               
-             
+              onClick={isRecording ? stopRecording : startRecording}
               className="send-btn-voice"
             >
             
-      <svg stroke="currentColor" fill="currentColor" strokeWidth={0} viewBox="0 0 24 24" height="1.5em" width="1.5em" ><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.42 2.72 6.23 6 6.72V22h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" /></svg>
+      
+      {
+        !isRecording  && <svg stroke="currentColor" fill="currentColor" strokeWidth={0} viewBox="0 0 24 24" height="1.5em" width="1.5em" ><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.42 2.72 6.23 6 6.72V22h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" /></svg>
+      }
 
-
+      {
+        isRecording && <svg stroke="currentColor" fill="currentColor" strokeWidth={0} viewBox="0 0 24 24" height="1.5em" width="1.5em" ><path d="M12,2C6.486,2,2,6.486,2,12s4.486,10,10,10s10-4.486,10-10S17.514,2,12,2z M12,20c-4.411,0-8-3.589-8-8s3.589-8,8-8 s8,3.589,8,8S16.411,20,12,20z" /><path d="M9 9H15V15H9z" /></svg>
+      }
 
             
              </button>
+            
     </form>
+    <AudioPlayer />
     </Suspense>
-    </>
+    </div>
   );
 }
 
 export default App;
+
+
+/* content: `
+Analyze the user's input ask message and follow these instructions:\n"
+- If the message contains the word 'today', respond information according  docs with  the current date and time ('${currentHour}') to the message.\n"
+- If the message contains any other day or any other content, return the information of different events  according docs.\n"
+ ask input: ${workflow.ask}" 
+
+` */

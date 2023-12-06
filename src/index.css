@@ -88,7 +88,7 @@ body {
      height: 600px;
      padding: 30px 20px 100px;
      width: 38rem;
-     top: 0; right:15%;
+     top: 0; left:5%;
    }
    .chat-box{
     z-index: 100;
@@ -186,7 +186,7 @@ body {
      gap: 5px;
      position: fixed;
      top: 70%;
-     right: 15%;
+     left: 5%;
      width: 32rem;
      height: 4rem;
      background: #fff;
@@ -234,7 +234,7 @@ body {
     position: absolute;
     top: 50%;
     
-    right: 17%;
+    left: 6%;
     display: flex;
     justify-content: center;
   
@@ -361,4 +361,11 @@ body {
   to{
     transform: scale(1);
   }
+}
+.bg-animated {
+  width: 100vw;
+  height: 100vh;
+  background-image: url(/public/animated_character1.gif);
+  background-size: cover;
+  
 }
