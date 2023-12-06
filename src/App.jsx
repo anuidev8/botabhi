@@ -206,11 +206,12 @@ const handleMessage = async (e) => {
      setIsLoading(true); // Set loading state to true
   setLoadingMessage("Thinking..."); // Set loading message
     const thread = await getThread()
-    console.log(thread);
-    await sendMessage(`${userMessage}`)
-     await checking()
-     const  aiResponse = await getMessage()
-     setMessages([...messages, { role: "outgoing", content: userMessage },{ role: "incoming", content: aiResponse }]);
+  
+    
+   const id =await sendMessage(`${userMessage}`)
+
+     const  aiResponse = await checking(id)
+     setMessages([...messages, { role: "outgoing", content: userMessage },{ role: "incoming", content: aiResponse }]); 
   }catch (error) {
     console.error("Error fetching response: ", error);
     setMessages([

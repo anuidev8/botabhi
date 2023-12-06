@@ -4,7 +4,7 @@ export const useOpenAiApi = () =>{
 
     const getThread = async () =>{
         if (!localStorage.getItem('threadId')) {
-            let data = JSON.stringify({})
+            /* let data = JSON.stringify({})
           
             let config = {
               method: 'post',
@@ -21,15 +21,28 @@ export const useOpenAiApi = () =>{
             const response = await axios.request(config)
             localStorage.setItem('threadId',`${response.data.id}`)
 
-            return response.data.id
+            return response.data.id */
+            const res = await axios.get('https://testappapi.pythonanywhere.com/start')
+          const data = res.data.thread_id
+          localStorage.setItem('threadId',`${data}`)
+          return data
           }else{
             return localStorage.getItem('threadId')
           }
+          
     }
 
     const sendMessage =  async(message) =>{
         const threadId = localStorage.getItem('threadId')
-        let data = JSON.stringify({
+        const user ={
+          "thread_id": threadId,
+          "message": message
+      
+      }
+        const res = await axios.post('https://testappapi.pythonanywhere.com/chat',user)
+          const data = res.data.run_id
+          return data 
+        /* let data = JSON.stringify({
             role: 'user',
             content:`In short summary response according to docs to user ${message}`
           })
@@ -47,12 +60,12 @@ export const useOpenAiApi = () =>{
           }
           
          const res = await axios.request(config)
-         console.log(res);
+         console.log(res); */
     }
 
-    const checking = async () =>{
+    const checking = async (id) =>{
         const threadId = localStorage.getItem('threadId')
-        const creationResponse = await axios.request({
+        /* const creationResponse = await axios.request({
             method: 'post',
             maxBodyLength: Infinity,
             url: `https://api.openai.com/v1/threads/${threadId}/runs`,
@@ -90,7 +103,16 @@ export const useOpenAiApi = () =>{
             await waitTillRunComplete()
           }
           
-          await waitTillRunComplete()
+          await waitTillRunComplete() */
+          
+        const user ={
+          "thread_id": threadId,
+          "run_id": id
+      
+      }
+        const res = await axios.post('https://testappapi.pythonanywhere.com/check',user)
+          const data = res.data.response
+          return data 
           
     }
 
